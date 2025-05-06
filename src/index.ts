@@ -178,11 +178,6 @@ async function run(disputeID: string) {
     { evidenceGroupID: disputeID }
   );
 
-  // Telegram: data fetched
-  await sendTelegramMessage(
-    `✅ *Data fetched for Dispute ${disputeID}*\n• Period: ${dispute.period}\n• Template ID: ${dispute.templateId}\n• Evidences: ${evidences.length}`
-  );
-
   // Prepend IPFS gateways
   const parsedTemplate = JSON.parse(disputeTemplate.templateData);
   const baseOutput = prependIpfsPrefixDeep({
@@ -203,11 +198,6 @@ async function run(disputeID: string) {
   );
 
   console.log("✅ All essential data fetched.");
-
-  // Telegram: evidence processed
-  await sendTelegramMessage(
-    `📑 *Evidence processed for Dispute ${disputeID}*\nReady to send to LLM.`
-  );
 
   const systemPrompt = `You are a fair and impartial arbitrator tasked with analyzing dispute evidence and making well-reasoned decisions. Consider all evidence carefully, weigh the credibility of sources, and provide clear justification for your conclusions.`;
   const messages: any[] = [
@@ -265,13 +255,16 @@ async function run(disputeID: string) {
   // Telegram: final analysis
   const vote = analysis.vote || {};
   await sendTelegramMessage(
-    `🏁 *Dispute ${disputeID} Analysis Complete*\n
-    • Selected: ${vote.title || vote.id || "N/A"}\n
-    • Justification:\n${analysis.justification || "N/A"}`
+    `🏁 *Dispute ${disputeID} Analysis Complete*
+    • Dispute: https://v2.kleros.builders/#/cases/${dispute.id}/overview
+    • Period: ${dispute.period}
+    • Evidences: ${evidences.length}
+    • Selected: ${vote.title ? `${vote.title} - ${vote.description}` : vote.id || "N/A"}
+    • Justification: ${analysis.justification || "N/A"}`
   );
 }
 
-const [,, disputeID = "43"] = process.argv;
+const [,, disputeID = "42"] = process.argv;
 run(disputeID).catch(err => {
   console.error("❌ Error:", err);
   process.exit(1);
