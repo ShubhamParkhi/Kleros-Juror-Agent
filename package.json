@@ -1,19 +1,24 @@
 {
   "name": "kleros-juror-agent",
   "version": "1.0.0",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "ts-node src/index.ts"
+    "build": "tsc",
+    "start": "node src/index.ts"
   },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "description": "",
   "dependencies": {
-    "dotenv": "^16.0.3",
-    "ethers": "^6.0.0",
-    "graphql-request": "^5.0.0",
-    "openai": "^4.14.1"
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
+    "graphql-request": "^7.1.2",
+    "openai": "^4.97.0"
   },
   "devDependencies": {
-    "@types/node": "^18.16.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.1.6"
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
   }
 }

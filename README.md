@@ -1,59 +1,53 @@
-# Kleros Juror Agent
+# TypeScript Bot Project
 
-An automated juror agent for the Kleros court system that processes disputes and submits rulings using AI-powered decision making.
+A TypeScript-based bot project with GraphQL and OpenAI integration.
 
-## Features
+## Project Overview
 
-- Automated dispute processing
-- AI-powered decision making using OpenAI GPT models
-- Integration with Kleros court smart contracts
-- GraphQL-based dispute and evidence retrieval
-- Ethereum transaction management
+This project is a TypeScript application that utilizes GraphQL for data querying and OpenAI's API for AI capabilities.
 
 ## Prerequisites
 
-- Node.js (v16 or higher)
-- npm or yarn package manager
-- Ethereum wallet with ETH for transaction fees and PNK for staking in court and to be drawn as juror
-- OpenAI API key
+- Node.js (Latest LTS version recommended)
+- npm (comes with Node.js)
+
+## Dependencies
+
+### Production Dependencies
+- graphql-request: ^7.1.2
+- openai: ^4.97.0
+
+### Development Dependencies
+- typescript: ^5.8.3
+- @types/node: ^22.15.3
 
 ## Installation
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Copy the environment template and configure your settings:
-   ```bash
-   cp .env.example .env
-   ```
-4. Edit `.env` with your configuration values
-
-## Configuration
-
-The following environment variables need to be configured:
-
-- `PROVIDER_URL`: Ethereum network provider URL (e.g., Infura)
-- `PRIVATE_KEY`: Your Ethereum wallet private key
-- `KLEROS_COURT_ADDRESS`: Kleros court smart contract address
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `OPENAI_MODEL`: OpenAI model to use (e.g., gpt-4.1)
-- `MAIN_SUBGRAPH_URL`: Kleros main subgraph URL
-- `TPL_SUBGRAPH_URL`: Kleros templates subgraph URL
-
-## Usage
-
-Start the juror agent:
-
 ```bash
-npm start
+npm install
 ```
 
-The agent will:
-1. Monitor for assigned disputes
-2. Process dispute evidence and template data
-3. Make decisions using AI
-4. Submit rulings to the Kleros court
+## Scripts
 
-**Note:** It is recommended to use a wallet with minimal assets for security purposes. Only keep enough ETH for transaction fees and the required PNK for staking/juror duties.
+- `npm run build` - Compiles TypeScript code to JavaScript
+- `npm start` - Runs the compiled application
+- `npm test` - Runs tests (currently not configured)
+
+## Project Structure
+
+```
+bot/
+├── src/           # Source code directory
+├── dist/          # Compiled JavaScript output
+├── package.json   # Project dependencies and scripts
+├── tsconfig.json  # TypeScript configuration
+└── README.md      # Project documentation
+```
+
+## Development
+
+The project uses TypeScript for type-safe development. The compiled output is directed to the `dist` directory as configured in `tsconfig.json`.
+
+## License
+
+ISC
