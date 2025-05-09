@@ -120,6 +120,19 @@ function prependIpfsPrefixDeep(obj: any): any {
   return obj;
 }
 
+function sanitizeLLMResponse(raw: string): any {
+  try {
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("No JSON object found in response.");
+    const jsonStr = match[0];
+    return JSON.parse(jsonStr);
+  } catch (err) {
+    console.error("❌ Failed to parse LLM response:", err instanceof Error ? err.message : String(err));
+    return null;
+  }
+}
+
+
 async function fetchFileContent(url: string): Promise<string> {
   try {
     const response = await axios.get(url, {
@@ -199,19 +212,59 @@ async function run(disputeID: string) {
 
   console.log("✅ All essential data fetched.");
 
-  const systemPrompt = `You are a fair and impartial arbitrator tasked with analyzing dispute evidence and making well-reasoned decisions. Consider all evidence carefully, weigh the credibility of sources, and provide clear justification for your conclusions.`;
+  const systemPrompt = `You are a fair and impartial arbitrator tasked with analyzing dispute evidence and making well-reasoned decisions. Consider all evidence carefully, weigh the credibility of sources, and provide clear justification for your conclusions. Only return a valid JSON object using the following schema, with no additional text or explanation. Do not wrap the object in a string or function call.
+
+  Schema:
+  {
+    "vote": {
+      "id": string,
+      "title": string,
+      "description": string
+    },
+    "justification": string,
+    "references": [
+      {
+        "evidence_id"?: string,
+        "policy_reference"?: string,
+        "description": string
+      }
+    ]
+  }`;
   const messages: any[] = [
     { role: "system", content: systemPrompt },
     {
       role: "user",
-      content: `Please analyze this dispute case and select the most appropriate resolution from the available options.\n\nDispute ID: ${dispute.id}\nCourt: ${dispute.court.id}\nPolicy: ${dispute.court.policy}\nPeriod: ${dispute.period}\n\nAvailable Answers:\n${JSON.stringify(parsedTemplate.answers, null, 2)}\n\nFollow these steps in your analysis:\n
-      1) Review evidence\n
-      2) Evaluate timeline\n
-      3) Assess validity\n
-      4) Provide JSON with:\n
-      • A vote object containing the selected answer's id, title, and description\n
-      • A detailed justification explaining your reasoning\n
-      • Specific references to key evidence that influenced your decision\n`,
+      content: `Please analyze this dispute case and select the most appropriate resolution from the available options.\n\n
+      Dispute ID: ${dispute.id}\n
+      Court: ${dispute.court.id}\n
+      Policy: ${dispute.court.policy}\n
+      Period: ${dispute.period}\n\n
+      Available Answers:\n${JSON.stringify(parsedTemplate.answers, null, 2)}. 
+      Please analyze this dispute and return only a JSON object using the exact schema below, no extra formatting.
+
+      Schema:
+      {
+        "vote": {
+          "id": string,
+          "title": string,
+          "description": string
+        },
+        "justification": string,
+        "references": [
+          {
+            "evidence_id"?: string,
+            "policy_reference"?: string,
+            "description": string
+          }
+        ]
+      }
+
+      Your task:
+      1) Review evidence
+      2) Evaluate timeline
+      3) Assess validity
+      4) Return only the JSON object with your decision and justification.
+      `,
     },
   ];
 
@@ -224,13 +277,13 @@ async function run(disputeID: string) {
         role: "user",
         content: [
           { type: "text", text: `Evidence (${ev.id}): ${ev.description}` },
-          { type: "image_url", image_url: { url: ev.fileURI } }
-        ]
+          { type: "image_url", image_url: { url: ev.fileURI } },
+        ],
       });
     } else if (ev.content.startsWith('[Binary File]') || ev.content.startsWith('[Error')) {
       messages.push({
         role: "user",
-        content: `Evidence (${ev.id}): ${ev.description}\n${ev.content}`
+        content: `Evidence (${ev.id}): ${ev.description}\n${ev.content}`,
       });
     } else {
       messages.push({
@@ -249,7 +302,7 @@ async function run(disputeID: string) {
     response_format: { type: "json_object" },
   });
 
-  const analysis = JSON.parse(completion.choices[0].message.content || "{}");
+  const analysis = sanitizeLLMResponse(completion.choices[0].message.content || "{}");
   console.log("LLM Analysis:", JSON.stringify(analysis, null, 2));
 
   // Telegram: final analysis
@@ -264,7 +317,7 @@ async function run(disputeID: string) {
   );
 }
 
-const [,, disputeID = "42"] = process.argv;
+const [,, disputeID = "49"] = process.argv;
 run(disputeID).catch(err => {
   console.error("❌ Error:", err);
   process.exit(1);
