@@ -132,7 +132,6 @@ function sanitizeLLMResponse(raw: string): any {
   }
 }
 
-
 async function fetchFileContent(url: string): Promise<string> {
   try {
     const response = await axios.get(url, {
@@ -142,7 +141,6 @@ async function fetchFileContent(url: string): Promise<string> {
         Accept: "*/*",
         "User-Agent": "Mozilla/5.0 (compatible; Bot/1.0)",
       },
-      maxContentLength: 5 * 1024 * 1024, // 5MB
     });
 
     const contentType = response.headers["content-type"] || "";
@@ -163,6 +161,12 @@ async function fetchFileContent(url: string): Promise<string> {
     console.error(`Error fetching file from ${url}:`, error.message || error);
     return `[Error fetching file from ${url}]`;
   }
+}
+
+async function fetchAndEncodePDF(url: string): Promise<string> {
+  const response = await axios.get(url, { responseType: "arraybuffer" });
+  const base64 = Buffer.from(response.data).toString("base64");
+  return `data:application/pdf;base64,${base64}`;
 }
 
 // === LLM CLIENT ===
@@ -270,11 +274,8 @@ async function run(disputeID: string) {
     },
   ];
 
-  evidenceContents.forEach((ev) => {
-    if (
-      ev.content.startsWith("[Image File]") ||
-      ev.content.startsWith("[PDF Document]")
-    ) {
+  evidenceContents.forEach(async (ev) => {
+    if (ev.content.startsWith("[Image File]")) {
       messages.push({
         role: "user",
         content: [
@@ -282,6 +283,25 @@ async function run(disputeID: string) {
           { type: "image_url", image_url: { url: ev.fileURI } },
         ],
       });
+    } else if (ev.content.startsWith("[PDF Document]")) {
+      try {
+        const dataUrl = await fetchAndEncodePDF(ev.fileURI);
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text", text: `Evidence (${ev.id}): ${ev.description}` },
+            {
+              type: "file",
+              file: {
+                filename: `evidence-${ev.id}.pdf`,
+                file_data: dataUrl,
+              },
+            },
+          ],
+        });
+      } catch (err) {
+        console.error(`Failed to encode PDF ${ev.fileURI}:`, err);
+      }
     } else if (ev.content.startsWith('[Binary File]') || ev.content.startsWith('[Error')) {
       messages.push({
         role: "user",
@@ -319,7 +339,7 @@ async function run(disputeID: string) {
   );
 }
 
-const [,, disputeID = "30"] = process.argv;
+const [,, disputeID = "50"] = process.argv;
 run(disputeID).catch(err => {
   console.error("❌ Error:", err);
   process.exit(1);
