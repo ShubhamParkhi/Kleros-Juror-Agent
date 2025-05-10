@@ -213,6 +213,7 @@ async function run(disputeID: string) {
   console.log("✅ All essential data fetched.");
 
   const systemPrompt = `You are a fair and impartial arbitrator tasked with analyzing dispute evidence and making well-reasoned decisions. Consider all evidence carefully, weigh the credibility of sources, and provide clear justification for your conclusions. Only return a valid JSON object using the following schema, with no additional text or explanation. Do not wrap the object in a string or function call.
+  Policy: ${baseOutput.dispute_state.court.policy}\n
 
   Schema:
   {
@@ -230,6 +231,7 @@ async function run(disputeID: string) {
       }
     ]
   }`;
+  
   const messages: any[] = [
     { role: "system", content: systemPrompt },
     {
@@ -237,7 +239,7 @@ async function run(disputeID: string) {
       content: `Please analyze this dispute case and select the most appropriate resolution from the available options.\n\n
       Dispute ID: ${dispute.id}\n
       Court: ${dispute.court.id}\n
-      Policy: ${dispute.court.policy}\n
+      Policy: ${baseOutput.template.policyURI}\n
       Period: ${dispute.period}\n\n
       Available Answers:\n${JSON.stringify(parsedTemplate.answers, null, 2)}. 
       Please analyze this dispute and return only a JSON object using the exact schema below, no extra formatting.
@@ -317,7 +319,7 @@ async function run(disputeID: string) {
   );
 }
 
-const [,, disputeID = "49"] = process.argv;
+const [,, disputeID = "30"] = process.argv;
 run(disputeID).catch(err => {
   console.error("❌ Error:", err);
   process.exit(1);
